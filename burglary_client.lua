@@ -465,10 +465,10 @@ Citizen.CreateThread(function()
         local dist = Vdist(plyCoords.x, plyCoords.y, plyCoords.z, gym[k].x, gym[k].y, gym[k].z)
         if dist <= 0.5 then
           DrawText3D(plyCoords.x, plyCoords.y, plyCoords.z, "~w~Press ~r~[H] ~w~ to use pawn shop!", 0.4)
-        end
           if IsControlJustPressed(0, Keys['H'])then
             OpenSellMenu()
-          end			
+          end
+        end		
       end
   end
 end)
