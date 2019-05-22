@@ -9,7 +9,6 @@ local Keys = {
   ["LEFT"] = 174, ["RIGHT"] = 175, ["TOP"] = 27, ["DOWN"] = 173,
 }
 
-local DoingBreak = false -- don't touch
 local GUI = {} -- don't touch
 ESX = nil -- don't touch
 GUI.Time = 0 -- don't touch
@@ -18,6 +17,9 @@ local showPro = false -- don't touch
 local stealing = false -- don't touch
 local peeking = false -- don't touch
 local CurrentAction		= nil
+local timer = false
+local secsRemaining = nil
+local doorTime = {}
 ------------------------------------------------------
 ------------------------------------------------------
 local useQalleCameraSystem = true --( https://github.com/qalle-fivem/esx-qalle-camerasystem )
@@ -43,7 +45,7 @@ local carUnlocked = "You have unlocked the car"
 local youFound = "From the" -- when you steal something
 local burglaryDetected = "A burglary has been detected at" -- text 1 cops gets sent
 local sentPhoto = "We've sent you a photo of the criminal." -- if you use qalle's camerasystem this will be in the message too
-local item = {'ring', 'goldNecklace', 'laptop', 'coke_pooch', 'weed_pooch', 'samsungS10', 'rolex', 'camera', 'nothing', 'nothing', 'nothing', 'nothing', 'nothing'}
+local item = {'ring', 'goldNecklace', 'laptop', 'coke_pooch', 'weed_pooch', 'samsungS10', 'rolex', 'camera'}
 local exitPos = {pos = {x = 0, y = 0, z = 0, h = 0 }}
 ---------------------------
 
@@ -143,20 +145,39 @@ end)
 RegisterNetEvent('99kr-burglary:Lockpick')
 AddEventHandler('99kr-burglary:Lockpick', function(xPlayer)
   lockpicking = true
+  Citizen.Wait(100)
+  lockpicking = false
 end)
 
 local burglaryPlaces = {
   ["Robban"] = {
     locked = true,
     pos = { x = 1229.1, y = -725.47, z = 60.80, h = 89.98 }, -- door coords
-    inside = { x = 346.52, y = -1013.19, z = -99.2, h = 357.81 }, -- Inside coords
-    animPos = { x = 1229.53, y = -724.81, z = 60.96, h = 277.96 } -- The animation position
+    inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 }, -- Inside coords
+    animPos = { x = 1229.53, y = -724.81, z = 60.96, h = 277.96 }, -- The animation position
+    doorTime = {}
   },
+  ["Grove Street 2"] = {
+   locked = true,
+    pos = { x = 85.58 , y = -1959.38 , z = 21.12, h = 220.54 },  -- door coords
+    inside = { x = 346.52, y = -1013.19, z = -99.2, h = 357.81 },  -- Inside the house coords
+    animPos = { x = 85.58 , y = -1959.38 , z = 21.12, h = 220.54 }, -- The animation position
+    doorTime = {}
+ },
   ["Grove Street 1"] = {
     locked = true,
     pos = { x = 126.73, y = -1930.20, z = 22.0, h = 207.79 },  -- door coords
-    inside = { x = 346.52, y = -1013.19, z = -99.2, h = 357.81 },  -- Inside the house coords
-    animPos = { x = 126.73, y = -1930.00, z = 21.38, h = 207.79 } -- The animation position
+    inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 },  -- Inside the house coords
+    animPos = { x = 126.73, y = -1930.00, z = 21.38, h = 207.79 }, -- The animation position
+    doorTime = {}
+  },
+  ------------   for new house change name, coords for pos and use same coords for animpos ------------------  
+  ["New house"] = {
+    locked = true,
+    pos = { x = 0, y = 0, z = 0, h = 0 },  -- door coords
+    inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 },  -- Inside the house coords
+    animPos = { x = 0, y = 0, z = 0, h = 0 }, -- The animation position
+    doorTime = {}
   }
 }
 
@@ -181,23 +202,27 @@ Citizen.CreateThread(function()
       local house = k
       local coords = GetEntityCoords(playerPed)
       local dist   = GetDistanceBetweenCoords(v.pos.x, v.pos.y, v.pos.z, coords.x, coords.y, coords.z, false)
-        if dist <= 1.2 and DoingBreak == false then
-          if v.locked then
-            DrawText3D(v.pos.x, v.pos.y, v.pos.z, text, 0.4)                  
-              if lockpicking == true then
-                confMenu(house)
-                lockpicking = false
+      if dist <= 1.2 and v.locked == true then
+          DrawText3D(v.pos.x, v.pos.y, v.pos.z, text, 0.4)                  
+          if lockpicking == true then
+            v.doorTime = GetGameTimer() + 600 * 1000
+            confMenu(house)
+            lockpicking = false
+          end  
+      else
+        if dist <= 1.2 and timer == true then
+         local secsRemaining = math.ceil((v.doorTime - GetGameTimer()) / 1000)
+          secsRemaining = secsRemaining - 1
+          if secsRemaining > 0 then
+                DrawText3D(v.pos.x, v.pos.y, v.pos.z,'Please wait ~r~'..secsRemaining..'~w~ until you can Break in', 0.4)
+          else
+            timer = false
+            v.locked = true 
+            doorTime = {}      
           end
-        else
-          DrawText3D(v.pos.x, v.pos.y, v.pos.z, textUnlock, 0.4)                  
-            if IsControlJustPressed(0, Keys["E"]) then
-              fade()
-              SetCoords(playerPed, v.inside.x, v.inside.y, v.inside.z - 0.98)
-              SetEntityHeading(playerPed, v.inside.h)
-            end
-          end
+          
         end
-      
+      end
     end
   end
 end)
@@ -237,6 +262,12 @@ Citizen.CreateThread(function()
         if GetDistanceBetweenCoords(v.inside.x, v.inside.y, v.inside.z, coords.x, coords.y, coords.z, false) <= 1.2 and IsControlJustPressed(0, Keys["E"]) then
           fade()
           teleport(exitPos)
+          timer = true
+          for k, v in pairs(burglaryInside) do
+            if v.amount < 1 then
+            v.amount = v.amount + 1
+            end
+          end
         end
       end
     end
@@ -314,7 +345,6 @@ function HouseBreak(house)
   local v = GetHouseValues(house, burglaryPlaces)
   local playerPed = PlayerPedId()
   fade()
-  DoingBreak = true
   FreezeEntityPosition(playerPed, true)
   SetEntityCoords(playerPed, v.animPos.x, v.animPos.y, v.animPos.z - 0.98)
   SetEntityHeading(playerPed, v.animPos.h)
@@ -328,7 +358,6 @@ function HouseBreak(house)
   if rand == 1 then
     TriggerServerEvent('99kr-burglary:Remove', 'lockpick', 1)
   end  
-  print(rand)
   fade()
   ClearPedTasks(playerPed)
   FreezeEntityPosition(playerPed, false)

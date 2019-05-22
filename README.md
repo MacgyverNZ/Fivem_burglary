@@ -35,7 +35,7 @@ If you want to have it non-esx you can just delete the ESX lines and make it for
    - Put `'client/html/sounds/lockpick.ogg',` under the `'client/html/sounds/demo.ogg',`
    - Done
    
-   ## Credit to
-   - Barbie on fivem for some pawnshop code
-   - XxFri3ndlyxX on fivem for some lockpick code
-   - and the main scipt used 99kr-burglary
+   ------------------------CREDIT--------------------
+   Barbie on fivem for some pawnshop code
+   XxFri3ndlyxX on fivem for some lockpick code
+   and the main scipt used 99kr-burglary
