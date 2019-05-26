@@ -22,8 +22,8 @@ local secsRemaining = nil
 local doorTime = {}
 ------------------------------------------------------
 ------------------------------------------------------
-local useQalleCameraSystem = true --( https://github.com/qalle-fivem/esx-qalle-camerasystem )
-local chancePoliceNoti = 60 -- the procent police get notified (only numbers like 30, 10, 40. You get it.)
+local useQalleCameraSystem = false --( https://github.com/qalle-fivem/esx-qalle-camerasystem )
+local chancePoliceNoti = 100 -- the procent police get notified (only numbers like 30, 10, 40. You get it.)
 local useBlip = true -- if u want blip
 local useInteractSound = true -- if you wanna use InteractSound (when u lockpick the door)
 ------------------------------------------------------
@@ -208,6 +208,11 @@ Citizen.CreateThread(function()
             v.doorTime = GetGameTimer() + 600 * 1000
             confMenu(house)
             lockpicking = false
+            for k, v in pairs(burglaryInside) do
+              if v.amount < 1 then
+              v.amount = v.amount + 1
+              end
+            end
           end  
       else
         if dist <= 1.2 and timer == true then
@@ -263,11 +268,7 @@ Citizen.CreateThread(function()
           fade()
           teleport(exitPos)
           timer = true
-          for k, v in pairs(burglaryInside) do
-            if v.amount < 1 then
-            v.amount = v.amount + 1
-            end
-          end
+          
         end
       end
     end
@@ -287,43 +288,31 @@ Citizen.CreateThread(function()
 end)
 
 function confMenu(house)
-Citizen.Wait(6)
+  Citizen.Wait(6)
   local v = GetHouseValues(house, burglaryPlaces)
   exitPos = {pos ={x = v.pos.x, y = v.pos.y, z = v.pos.z, h = v.pos.h }}
   Citizen.CreateThread(function()
-      local inventory = ESX.GetPlayerData().inventory
-      local LockpickAmount = nil
-        for i=1, #inventory, 1 do                          
-            if inventory[i].name == 'lockpick' then
-                LockpickAmount = inventory[i].count
-            end
+    local inventory = ESX.GetPlayerData().inventory
+    local LockpickAmount = nil
+      for i=1, #inventory, 1 do                          
+        if inventory[i].name == 'lockpick' then
+          LockpickAmount = inventory[i].count
         end
-          if LockpickAmount > 0 then
-            HouseBreak(house)
-            v.locked = false
-            Citizen.Wait(math.random(15000,30000))
-            local random = math.random(0, 100)
-              if useQalleCameraSystem == true then
-                if random <= chancePoliceNoti then                           -- chance police get notified and they get a photo of you
-                  TriggerEvent('skinchanger:getSkin', function(skin)
-                  TriggerServerEvent('esx-qalle-camerasystem:addWitness', skin, "Burglary")
-                  TriggerServerEvent('esx_phone:send', 'police', burglaryDetected .. ' ' .. house .. '. ' .. sentPhoto, { x = v.pos.x, y = v.pos.y, z = v.pos.z })
-                end)
-              end
-                  if useQalleCameraSystem == false then
-                    if random <= chancePoliceNoti then
-                      TriggerServerEvent('esx_phone:send', 'police', burglaryDetected .. ' ' .. house, { x = v.pos.x, y = v.pos.y, z = v.pos.z })
-                    end
-                  end
-          else 
-           ESX.ShowNotification(noLockpickText)
+      end
+        if LockpickAmount > 0 then
+          HouseBreak(house)
+          v.locked = false
+          Citizen.Wait(math.random(15000,30000))
+          local random = math.random(0, 100)
+          if random <= chancePoliceNoti then 
+            TriggerServerEvent('esx_addons_gcphone:startCall', 'police', burglaryDetected .. '\n ' .. house, { x = v.pos.x, y = v.pos.y, z = v.pos.z })
           end
+        else 
+          ESX.ShowNotification(noLockpickText)
         end
 	end)
 end
-    
-
-
+                        
 function steal(k)
   local goods = item[math.random(#item)] 
   local values = GetHouseValues(k, burglaryInside)
