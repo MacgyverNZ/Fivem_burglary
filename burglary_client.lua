@@ -182,15 +182,15 @@ local burglaryPlaces = {
 }
 
 local burglaryInside = {
-[" kitchen table you found "] = { x = 342.23, y = -1003.29, z = -99.0,  amount = 1},
-[" tv draw you found "] = { x = 338.14, y = -997.69,  z = -99.2,  amount = 1},
-[" bedroom draw you found "] = { x = 350.91, y = -999.26,  z = -99.2,  amount = 1},
-[" bed side table you found "] = { x = 349.19, y = -994.83,  z = -99.2,  amount = 1},
-[" book shelf you found "] = { x = 345.3,  y = -995.76,  z = -99.2,  amount = 1},
-[" hallway table you found "] = { x = 346.14, y = -1001.55, z = -99.2,  amount = 1},
-[" bathroom draw you found "] = { x = 347.23, y = -994.09,  z = -99.2,  amount = 1},
-[" dinning table you found "] = { x = 339.23, y = -1003.35, z = -99.2,  amount = 1},
-[" wardrobe you found "] = { x = 351.24, y = -993.53,  z = -99.2,  amount = 1}
+[" kitchen table you found "] = { x = 342.23, y = -1003.29, z = -99.0,  amount = 0},
+[" tv draw you found "] = { x = 338.14, y = -997.69,  z = -99.2,  amount = 0},
+[" bedroom draw you found "] = { x = 350.91, y = -999.26,  z = -99.2,  amount = 0},
+[" bed side table you found "] = { x = 349.19, y = -994.83,  z = -99.2,  amount = 0},
+[" book shelf you found "] = { x = 345.3,  y = -995.76,  z = -99.2,  amount = 0},
+[" hallway table you found "] = { x = 346.14, y = -1001.55, z = -99.2,  amount = 0},
+[" bathroom draw you found "] = { x = 347.23, y = -994.09,  z = -99.2,  amount = 0},
+[" dinning table you found "] = { x = 339.23, y = -1003.35, z = -99.2,  amount = 0},
+[" wardrobe you found "] = { x = 351.24, y = -993.53,  z = -99.2,  amount = 0}
 
 }
 
