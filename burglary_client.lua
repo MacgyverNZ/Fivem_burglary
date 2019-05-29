@@ -20,6 +20,7 @@ local CurrentAction		= nil
 local timer = false
 local secsRemaining = nil
 local doorTime = {}
+local notTime = "Its not time to become a crim"
 ------------------------------------------------------
 ------------------------------------------------------
 local useQalleCameraSystem = false --( https://github.com/qalle-fivem/esx-qalle-camerasystem )
@@ -170,15 +171,7 @@ local burglaryPlaces = {
     inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 },  -- Inside the house coords
     animPos = { x = 126.73, y = -1930.00, z = 21.38, h = 207.79 }, -- The animation position
     doorTime = {}
-  },
-  ------------   for new house change name, coords for pos and use same coords for animpos ------------------  
-  ["New house"] = {
-    locked = true,
-    pos = { x = 0, y = 0, z = 0, h = 0 },  -- door coords
-    inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 },  -- Inside the house coords
-    animPos = { x = 0, y = 0, z = 0, h = 0 }, -- The animation position
-    doorTime = {}
-  }
+  } 
 }
 
 local burglaryInside = {
@@ -202,6 +195,7 @@ Citizen.CreateThread(function()
       local house = k
       local coords = GetEntityCoords(playerPed)
       local dist   = GetDistanceBetweenCoords(v.pos.x, v.pos.y, v.pos.z, coords.x, coords.y, coords.z, false)
+    if GetClockHours() <= 7 and GetGameTimer() > 23   then
       if dist <= 1.2 and v.locked == true then
           DrawText3D(v.pos.x, v.pos.y, v.pos.z, text, 0.4)                  
           if lockpicking == true then
@@ -228,6 +222,12 @@ Citizen.CreateThread(function()
           
         end
       end
+    else 
+      if dist <= 1.2 then
+        breakTime = 23 - GetClockHours() 
+      DrawText3D(v.pos.x, v.pos.y, v.pos.z, 'you can break into the house in ~r~' ..breakTime.. ' ~w~hours', 0.4) 
+      end
+    end
     end
   end
 end)
@@ -267,6 +267,8 @@ Citizen.CreateThread(function()
         if GetDistanceBetweenCoords(v.inside.x, v.inside.y, v.inside.z, coords.x, coords.y, coords.z, false) <= 1.2 and IsControlJustPressed(0, Keys["E"]) then
           fade()
           teleport(exitPos)
+          SetPlayerInvisibleLocally(PlayerId(),  false)
+          SetEntityNoCollisionEntity(GetPlayerPed(playerID), GetPlayerPed(PlayerId()), 0)
           timer = true
           
         end
@@ -302,6 +304,8 @@ function confMenu(house)
         if LockpickAmount > 0 then
           HouseBreak(house)
           v.locked = false
+          SetPlayerInvisibleLocally(PlayerId(),  true)
+          SetEntityNoCollisionEntity(GetPlayerPed(playerID), GetPlayerPed(PlayerId()), 1)
           Citizen.Wait(math.random(15000,30000))
           local random = math.random(0, 100)
           if random <= chancePoliceNoti then 
