@@ -20,11 +20,11 @@ local CurrentAction		= nil
 local timer = false
 local secsRemaining = nil
 local doorTime = {}
-local notTime = "Its not time to become a crim"
+peds = {}
 ------------------------------------------------------
 ------------------------------------------------------
 local useQalleCameraSystem = false --( https://github.com/qalle-fivem/esx-qalle-camerasystem )
-local chancePoliceNoti = 100 -- the procent police get notified (only numbers like 30, 10, 40. You get it.)
+local chancePoliceNoti = 20 -- the procent police get notified (only numbers like 30, 10, 40. You get it.)
 local useBlip = true -- if u want blip
 local useInteractSound = true -- if you wanna use InteractSound (when u lockpick the door)
 ------------------------------------------------------
@@ -156,21 +156,36 @@ local burglaryPlaces = {
     pos = { x = 1229.1, y = -725.47, z = 60.80, h = 89.98 }, -- door coords
     inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 }, -- Inside coords
     animPos = { x = 1229.53, y = -724.81, z = 60.96, h = 277.96 }, -- The animation position
-    doorTime = {}
+    doorTime = {},
+    coord = vec3(349.8, -996.141, -98.7399),
+		rotation = 90.0,
+		animation = { dict = "amb@lo_res_idles@", anim = "lying_face_up_lo_res_base" }, -- sleeping animation
+		model = "a_f_y_hipster_01",
+		aggressive = true -- if they should attack after waking up
   },
   ["Grove Street 2"] = {
    locked = true,
     pos = { x = 85.58 , y = -1959.38 , z = 21.12, h = 220.54 },  -- door coords
     inside = { x = 346.52, y = -1013.19, z = -99.2, h = 357.81 },  -- Inside the house coords
     animPos = { x = 85.58 , y = -1959.38 , z = 21.12, h = 220.54 }, -- The animation position
-    doorTime = {}
+    doorTime = {},
+    coord = vec3(262.34, -1004.14, -99.27),
+		rotation = 270.0,
+		animation = { dict = "amb@lo_res_idles@", anim = "lying_face_up_lo_res_base" },
+		model = "a_m_y_beach_02",
+		aggressive = true
  },
   ["Grove Street 1"] = {
     locked = true,
     pos = { x = 126.73, y = -1930.20, z = 22.0, h = 207.79 },  -- door coords
     inside = { x = 346.52 , y = -1013.19 , z = -99.2, h = 357.81 },  -- Inside the house coords
     animPos = { x = 126.73, y = -1930.00, z = 21.38, h = 207.79 }, -- The animation position
-    doorTime = {}
+    doorTime = {},
+    coord = vec3(154.16, -1004.89, -99.41),
+		rotation = 270.0,
+		animation = { dict = "amb@lo_res_idles@", anim = "lying_face_up_lo_res_base" },
+		model = "a_f_y_hiker_01",
+		aggressive = true
   } 
 }
 
@@ -195,16 +210,16 @@ Citizen.CreateThread(function()
       local house = k
       local coords = GetEntityCoords(playerPed)
       local dist   = GetDistanceBetweenCoords(v.pos.x, v.pos.y, v.pos.z, coords.x, coords.y, coords.z, false)
-    if GetClockHours() <= 7 and GetGameTimer() > 23   then
+    if GetClockHours() > 23  or GetClockHours() <= 22 then
       if dist <= 1.2 and v.locked == true then
           DrawText3D(v.pos.x, v.pos.y, v.pos.z, text, 0.4)                  
           if lockpicking == true then
             v.doorTime = GetGameTimer() + 600 * 1000
             confMenu(house)
-            lockpicking = false
             for k, v in pairs(burglaryInside) do
               if v.amount < 1 then
               v.amount = v.amount + 1
+              lockpicking = false
               end
             end
           end  
@@ -262,13 +277,25 @@ Citizen.CreateThread(function()
       local playerPed = PlayerPedId()
       local coords = GetEntityCoords(playerPed)
       local house = k
+      if CanPedHearPlayer(PlayerId(), peds[1]) then
+        ClearPedTasks(peds[1])
+        Citizen.Wait(5)
+        PlayPain(peds[1], 7, 0)
+        if HasPedGotWeapon(peds[1], GetHashKey("WEAPON_PISTOL"), false) then
+          SetCurrentPedWeapon(peds[1], GetHashKey("WEAPON_PISTOL"), true)
+          Citizen.Wait(5)
+          TaskShootAtEntity(peds[1], PlayerPedId(), -1, 2685983626)
+        end
+      end
+      if GetDistanceBetweenCoords(v.inside.x, v.inside.y, v.inside.z, coords.x, coords.y, coords.z, false) <= 50.0 then
+        DrawNoiseBar(GetPlayerCurrentStealthNoise(PlayerId()), 3)
+      end
       if GetDistanceBetweenCoords(v.inside.x, v.inside.y, v.inside.z, coords.x, coords.y, coords.z, false) <= 3.0 then
         DrawText3D(v.inside.x, v.inside.y, v.inside.z, insideText, 0.4)
         if GetDistanceBetweenCoords(v.inside.x, v.inside.y, v.inside.z, coords.x, coords.y, coords.z, false) <= 1.2 and IsControlJustPressed(0, Keys["E"]) then
           fade()
           teleport(exitPos)
-          SetPlayerInvisibleLocally(PlayerId(),  false)
-          SetEntityNoCollisionEntity(GetPlayerPed(playerID), GetPlayerPed(PlayerId()), 0)
+          RemoveResidents(peds[1])
           timer = true
           
         end
@@ -291,6 +318,7 @@ end)
 
 function confMenu(house)
   Citizen.Wait(6)
+  SpawnResidents(house)
   local v = GetHouseValues(house, burglaryPlaces)
   exitPos = {pos ={x = v.pos.x, y = v.pos.y, z = v.pos.z, h = v.pos.h }}
   Citizen.CreateThread(function()
@@ -303,13 +331,13 @@ function confMenu(house)
       end
         if LockpickAmount > 0 then
           HouseBreak(house)
+         
           v.locked = false
-          SetPlayerInvisibleLocally(PlayerId(),  true)
-          SetEntityNoCollisionEntity(GetPlayerPed(playerID), GetPlayerPed(PlayerId()), 1)
           Citizen.Wait(math.random(15000,30000))
           local random = math.random(0, 100)
           if random <= chancePoliceNoti then 
             TriggerServerEvent('esx_addons_gcphone:startCall', 'police', burglaryDetected .. '\n ' .. house, { x = v.pos.x, y = v.pos.y, z = v.pos.z })
+            pedAwake = false
           end
         else 
           ESX.ShowNotification(noLockpickText)
@@ -358,11 +386,50 @@ function HouseBreak(house)
   SetEntityHeading(playerPed, v.inside.h)
 end 
 
+function ShowSubtitle(text)
+  BeginTextCommandPrint("STRING")
+  AddTextComponentSubstringPlayerName(text)
+  EndTextCommandPrint(3500, 1)
+end
 
 function SetCoords(playerPed, x, y, z)
   SetEntityCoords(playerPed, x, y, z)
   Citizen.Wait(100)
   SetEntityCoords(playerPed, x, y, z)
+end
+
+function DrawTimerBar(title, text, barIndex)
+	local width = 0.13
+	local hTextMargin = 0.003
+	local rectHeight = 0.038
+	local textMargin = 0.008
+	
+	local rectX = GetSafeZoneSize() - width + width / 2
+	local rectY = GetSafeZoneSize() - rectHeight + rectHeight / 2 - (barIndex - 1) * (rectHeight + 0.005)
+	
+	DrawSprite("timerbars", "all_black_bg", rectX, rectY, width, 0.038, 0, 0, 0, 0, 128)
+	
+	DrawText2d(title, GetSafeZoneSize() - width + hTextMargin, rectY - textMargin, 0.32)
+	DrawText2d(string.upper(text), GetSafeZoneSize() - hTextMargin, rectY - 0.0175, 0.5, true, width / 2)
+end
+
+function DrawNoiseBar(noise, barIndex)
+	DrawTimerBar("NOISE", math.floor(noise), barIndex)
+end
+
+function DrawText2d(text, x, y, scale, right, width)
+	SetTextFont(0)
+	SetTextScale(scale, scale)
+	SetTextColour(254, 254, 254, 255)
+
+	if right then
+		SetTextWrap(x - width, x)
+		SetTextRightJustify(true)
+	end
+	
+	BeginTextCommandDisplayText("STRING")	
+	AddTextComponentSubstringPlayerName(text)
+	EndTextCommandDisplayText(x, y)
 end
 
 function fade()
@@ -377,6 +444,43 @@ function loaddict(dict)
     Wait(10)
   end
 end
+
+function SpawnResidents(house)
+  local v = GetHouseValues(house, burglaryPlaces)
+  for k, v in pairs(burglaryPlaces) do
+			RequestModel(v.model)
+			while not HasModelLoaded(v.model) do 
+				Wait(0)
+			end
+			local ped = CreatePed(4, v.model, v.coord, v.rotation, false, false)
+			table.insert(peds, ped)
+			-- animation
+			RequestAnimDict(v.animation.dict)
+			while not HasAnimDictLoaded(v.animation.dict) do 
+        Wait(0) 
+      end
+      
+			if v.aggressive then
+				GiveWeaponToPed(ped, GetHashKey("WEAPON_PISTOL"), 255, true, false)
+			end
+			TaskPlayAnimAdvanced(ped, v.animation.dict, v.animation.anim, v.coord, 0.0, 0.0, v.rotation, 8.0, 1.0, -1, 1, 1.0, true, true)
+			SetFacialIdleAnimOverride(ped, "mood_sleeping_1", 0)
+			
+			SetPedHearingRange(ped, 3.0)
+			SetPedSeeingRange(ped, 30.0)
+      SetPedAlertness(ped, 0)
+  end
+end
+
+function RemoveResidents()
+	for k,ped in pairs(peds) do
+		SetPedAsNoLongerNeeded(ped)
+		DeletePed(ped)
+	end
+	
+	peds = {}
+end
+
 
 function DrawText3D(x, y, z, text, scale)
   local onScreen, _x, _y = World3dToScreen2d(x, y, z)
