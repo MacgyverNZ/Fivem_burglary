@@ -216,7 +216,7 @@ Citizen.CreateThread(function()
       local house = k
       local coords = GetEntityCoords(playerPed)
       local dist   = GetDistanceBetweenCoords(v.pos.x, v.pos.y, v.pos.z, coords.x, coords.y, coords.z, false)
-    if GetClockHours() > 23  or GetClockHours() <= 7 then
+    if GetClockHours() > 23  or GetClockHours() <= 22 then
       if dist <= 1.2 and v.locked == true then
           DrawText3D(v.pos.x, v.pos.y, v.pos.z, text, 0.4)                  
           if lockpicking == true then
@@ -380,7 +380,6 @@ function HouseBreak(house)
   end  
   fade()
   ClearPedTasks(playerPed)
-  
   FreezeEntityPosition(playerPed, false)
   SetCoords(playerPed, v.inside.x, v.inside.y, v.inside.z - 0.98)
   SetEntityHeading(playerPed, v.inside.h)
@@ -455,6 +454,7 @@ end
 Citizen.CreateThread(function(house)
 	while true do
     Citizen.Wait(6)
+    if GetPlayerCurrentStealthNoise(PlayerId()) > 5 then
     if CanPedHearPlayer(PlayerId(), peds[1]) then
       callCops(house)
       ClearPedTasks(peds[1])
@@ -466,6 +466,7 @@ Citizen.CreateThread(function(house)
         TaskShootAtEntity(peds[1], PlayerPedId(), -1, 2685983626)
         Citizen.Wait(7000)
       end
+    end
     end
   end
 end)
@@ -484,12 +485,13 @@ function SpawnResidents(home)
       while not HasAnimDictLoaded(resident.animation.dict) do 
         Wait(0) 
       end
+      
       TaskPlayAnimAdvanced(ped, resident.animation.dict, resident.animation.anim, resident.coord, 0.0, 0.0, resident.rotation, 8.0, 1.0, -1, 1, 1.0, true, true)
       SetFacialIdleAnimOverride(ped, "mood_sleeping_1", 0)
 
       SetPedHearingRange(ped, 3.0)
-			SetPedSeeingRange(ped, 0.0)
-      SetPedAlertness(ped, 0)
+			SetPedSeeingRange(ped, 3.0)
+      SetPedAlertness(ped, 1)
 
       if resident.aggressive then
         GiveWeaponToPed(ped, GetHashKey("WEAPON_PISTOL"), 255, true, false)
